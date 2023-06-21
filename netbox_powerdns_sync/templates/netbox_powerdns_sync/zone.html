@@ -1,0 +1,164 @@
+{% extends 'generic/object.html' %}
+{% load helpers %}
+{% load humanize %}
+{% load plugins %}
+
+{% block extra_controls %}
+  {% if object.enabled %}
+    <a href="{% url 'plugins:netbox_powerdns_sync:sync_schedule' %}?zones={{ object.pk }}" class="btn btn-sm btn-primary">
+      <span class="mdi mdi-sync" aria-hidden="true"></span> Schedule Sync
+    </a>
+  {% else %}
+    <a href="#" class="btn btn-sm btn-primary disabled">
+      <span class="mdi mdi-sync" aria-hidden="true"></span> Schedule Sync
+    </a>
+  {% endif %}
+{% endblock extra_controls %}
+
+{% block content %}
+  <div class="row mb-3">
+    <div class="col col-md-6">
+      <div class="card">
+        <h5 class="card-header">DNS Zone</h5>
+        <div class="card-body">
+          <table class="table table-hover attr-table">
+            <tr>
+              <th scope="row">Name</th>
+              <td>{{ object.name|placeholder }}</td>
+            </tr>
+            <tr>
+              <th scope="row">Description</th>
+              <td>{{ object.description|placeholder }}</td>
+            </tr>
+            <tr>
+              <th scope="row">Enabled</th>
+              <td>{% checkmark object.enabled %}</td>
+            </tr>
+            <tr>
+              <th scope="row">Reverse zone</th>
+              <td>{% checkmark object.is_reverse %}</td>
+            </tr>
+            <tr>
+              <th scope="row">Is default</th>
+              <td>{% checkmark object.is_default %}</td>
+            </tr>
+            <tr>
+              <th scope="row">Default TTL</th>
+              <td>{{ object.default_ttl|placeholder }}s</td>
+            </tr>
+            <tr>
+              <th scope="row">API Servers</th>
+              <td>
+                {% for server in object.api_servers.all %}
+                  {{ server|linkify }}<br>
+                {% endfor %}
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <h5 class="card-header">Naming methods</h5>
+        <div class="card-body">
+          <table class="table table-hover attr-table">
+            <tr>
+              <th scope="row">IP Address</th>
+              <td>
+                {{ object.get_naming_ip_method_display }}<br>
+                <code class="text-muted">{{ object.naming_ip_method }}</code>
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Device</th>
+              <td>
+                {{ object.get_naming_device_method_display }}<br>
+                <code class="text-muted">{{ object.naming_device_method }}</code>
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">FHRP Group</th>
+              <td>
+                {{ object.get_naming_fgrpgroup_method_display }}<br>
+                <code class="text-muted">{{ object.naming_fgrpgroup_method }}</code>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      {% include 'inc/panels/custom_fields.html' %}
+      {% plugin_left_page object %}
+    </div>
+    <div class="col col-md-6">
+      <div class="card">
+        <h5 class="card-header">Matchers</h5>
+        <div class="card-body">
+          <table class="table table-hover attr-table">
+            <tr>
+              <th scope="row">IP Address tags</th>
+              <td>
+                {% for tag in object.match_ipaddress_tags.all %}
+                  {% tag tag %}
+                {% empty %}
+                  <span class="text-muted">No tags assigned</span>
+                {% endfor %}
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Interface tags</th>
+              <td>
+                {% for tag in object.match_interface_tags.all %}
+                  {% tag tag %}
+                {% empty %}
+                  <span class="text-muted">No tags assigned</span>
+                {% endfor %}
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Device tags</th>
+              <td>
+                {% for tag in object.match_device_tags.all %}
+                  {% tag tag %}
+                {% empty %}
+                  <span class="text-muted">No tags assigned</span>
+                {% endfor %}
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">FHRP Group tags</th>
+              <td>
+                {% for tag in object.match_fhrpgroup_tags.all %}
+                  {% tag tag %}
+                {% empty %}
+                  <span class="text-muted">No tags assigned</span>
+                {% endfor %}
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Device roles</th>
+              <td>
+                {% for role in object.match_device_roles.all %}
+                  <span class="badge" style="color: {{ role.color|fgcolor }}; background-color: #{{ role.color }}">
+                    <a href="{{ role.get_absolute_url }}">{{ role }}</a>
+                  </span>
+                {% empty %}
+                  <span class="text-muted">No roles assigned</span>
+                {% endfor %}
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Management interfaces only</th>
+              <td>{% checkmark object.match_interface_mgmt_only %}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      {% include 'inc/panels/tags.html' %}
+      {% plugin_right_page object %}
+    </div>
+  </div>
+  <div class="row mb-3">
+    <div class="col col-md-12">
+      {% plugin_full_width_page object %}
+    </div>
+  </div>
+{% endblock content %}

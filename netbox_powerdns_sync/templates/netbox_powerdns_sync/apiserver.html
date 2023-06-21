@@ -1,0 +1,62 @@
+{% extends 'generic/object.html' %}
+{% load helpers %}
+{% load plugins %}
+{% load render_table from django_tables2 %}
+
+{% block content %}
+  <div class="row mb-3">
+    <div class="col col-md-6">
+      <div class="card">
+        <h5 class="card-header">API Server</h5>
+        <div class="card-body">
+          <table class="table table-hover attr-table">
+            <tr>
+              <th scope="row">Name</th>
+              <td>{{ object.name|placeholder }}</td>
+            </tr>
+            <tr>
+              <th scope="row">Description</th>
+              <td>{{ object.description|placeholder }}</td>
+            </tr>
+            <tr>
+              <th scope="row">API URL</th>
+              <td class="font-monospace">{{ object.api_url|placeholder }}</td>
+            </tr>
+            <tr>
+              <th scope="row">API Token</th>
+              <td class="font-monospace">{{ object.api_token|placeholder }}</td>
+            </tr>
+            <tr>
+              <th scope="row">Enabled</th>
+              <td>{% checkmark object.enabled %}</td>
+            </tr>
+            <tr>
+              <th scope="row">Assigned Zones</th>
+              <td>
+                <a href="{% url 'plugins:netbox_powerdns_sync:zone_list' %}?api_server_id={{ object.pk }}">{{ zones.count }}</a>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      {% include 'inc/panels/custom_fields.html' %}
+      {% plugin_left_page object %}
+    </div>
+    <div class="col col-md-6">
+      {% include 'inc/panels/tags.html' %}
+      {% plugin_right_page object %}
+    </div>
+  </div>
+  <div class="row mb-3">
+    <div class="col col-md-12">
+      <div class="card">
+        <h5 class="card-header">Assigned Zones</h5>
+        <div class="card-body table-responsive">
+          {% render_table zone_table 'inc/table.html' %}
+          {% include 'inc/paginator.html' with paginator=zone_table.paginator page=zone_table.page %}
+        </div>
+      </div>
+      {% plugin_full_width_page object %}
+    </div>
+  </div>
+{% endblock content %}

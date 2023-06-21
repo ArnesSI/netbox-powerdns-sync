@@ -1,0 +1,39 @@
+{% extends "base/layout.html" %}
+{% load form_helpers %}
+{% load render_table from django_tables2 %}
+
+{% block title %}Run sync of zones{% endblock title %}
+
+{% block content %}
+  <div class="row">
+    <div class="col">
+      <div class="card">
+        <h5 class="card-header">Current schedule</h5>
+        <div class="card-body table-responsive">
+          {% render_table jobs_table 'inc/table.html' %}
+          {% include 'inc/paginator.html' with paginator=jobs_table.paginator page=jobs_table.page %}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <form action="" method="post" enctype="multipart/form-data" class="form form-object-edit">
+        {% csrf_token %}
+        <div class="field-group my-4">
+          {% render_form form %}
+          <div class="row mb-3">
+            <div class="col col-sm-3">&nbsp;</div>
+            <div class="col">
+              Leave "Schedule" at and "Recurs every" fields empty to run a one off sync immediately. 
+            </div>
+          </div>
+        </div>
+        <div class="float-end">
+          <a href="{% url 'plugins:netbox_powerdns_sync:zone_list' %}" class="btn btn-outline-danger">Cancel</a>
+          <button type="submit" name="_run" class="btn btn-primary"><i class="mdi mdi-play"></i> Sync</button>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endblock %}

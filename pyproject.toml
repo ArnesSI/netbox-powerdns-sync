@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "netbox-powerdns-sync"
+version = "0.0.1"
+description = "Sync DNS records in PowerDNS with NetBox"
+authors = ["Matej Vadnjal <matej.vadnjal@arnes.si>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/ArnesSI/netbox-powerdns-sync/"
+keywords = ["netbox", "netbox-plugin", "powerdns"]
+packages = [{include = "netbox_powerdns_sync"}]
+include = ["netbox_powerdns_sync/templates/*.html"]
+
+[tool.poetry.dependencies]
+python = ">=3.9"
+python-powerdns = "^2.1.0"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.3.0"
+pytest = "^7.3.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
