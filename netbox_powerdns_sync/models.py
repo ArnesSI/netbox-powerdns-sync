@@ -3,6 +3,7 @@ from django.core.validators import MinLengthValidator
 from django.db import models
 from django.forms import ValidationError
 from django.urls import reverse
+from taggit.managers import TaggableManager
 from core.models import Job
 from dcim.models import DeviceRole, Interface
 from ipam.models import IPAddress, FHRPGroup
@@ -161,6 +162,16 @@ class Zone(NetBoxModel):
         choices=NamingFgrpGroupChoices,
         default=None,
         null=True,
+    )
+    # netbox-plugin-dns also has Zone model
+    # if both plugins are installed, django complains:
+    #   netbox_dns.Zone.tags: (fields.E304) Reverse accessor 'Tag.zone_set'
+    #   for 'netbox_dns.Zone.tags' clashes with reverse accessor for
+    #   'netbox_powerdns_sync.Zone.tags'
+    # So let's disable generating reverse relation here.
+    tags = TaggableManager(
+        through="extras.TaggedItem",
+        related_name="+"
     )
 
     @property
