@@ -42,6 +42,7 @@ class ApiServerTable(NetBoxTable):
         url_params={"api_server_id": "pk"},
         verbose_name="Zones"
     )
+    enabled = columns.BooleanColumn()
     tags = columns.TagColumn(
         url_name="plugins:netbox_powerdns_sync:apiserver_list"
     )
