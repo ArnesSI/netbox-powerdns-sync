@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "netbox-powerdns-sync"
-version = "0.0.1"
+version = "0.0.2"
 description = "Sync DNS records in PowerDNS with NetBox"
 authors = ["Matej Vadnjal <matej.vadnjal@arnes.si>"]
 license = "MIT"
