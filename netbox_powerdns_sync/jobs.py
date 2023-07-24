@@ -125,6 +125,9 @@ class PowerdnsTask(JobLoggingMixin):
         return make_canonical(self.ip.address.ip.reverse_dns)
 
     def create_record(self, dns_record: DnsRecord) -> None:
+        servers = self.get_pdns_servers_for_zone(dns_record.zone_name)
+        if not servers:
+            raise PowerdnsSyncNoServers(f"No valid servers found for zone {dns_record.zone_name}")
         for api_server, pdns_server in self.get_pdns_servers_for_zone(dns_record.zone_name):
             zone = pdns_server.get_zone(dns_record.zone_name)
             if not zone:
@@ -135,6 +138,9 @@ class PowerdnsTask(JobLoggingMixin):
             zone.create_records([dns_record.as_rrset()])
 
     def delete_record(self, dns_record: DnsRecord) -> None:
+        servers = self.get_pdns_servers_for_zone(dns_record.zone_name)
+        if not servers:
+            raise PowerdnsSyncNoServers(f"No valid servers found for zone {dns_record.zone_name}")
         for api_server, pdns_server in self.get_pdns_servers_for_zone(dns_record.zone_name):
             zone = pdns_server.get_zone(dns_record.zone_name)
             if not zone:
