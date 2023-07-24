@@ -15,7 +15,7 @@ class ZoneViewSet(NetBoxModelViewSet):
         "match_ipaddress_tags",
         "match_interface_tags",
         "match_device_tags",
-        "match_fhrp_tags",
+        "match_fhrpgroup_tags",
         "match_device_roles",
         "tags"
     )
