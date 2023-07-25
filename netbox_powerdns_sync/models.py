@@ -281,7 +281,7 @@ class Zone(NetBoxModel):
         zones = filter_mgmt_only(zones, ip)
         if zones:
             return zones
-        return cls.objects.empty()
+        return cls.objects.none()
 
     clone_fields = (
         "name", "description", "api_servers", "default_ttl",
