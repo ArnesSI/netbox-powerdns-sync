@@ -45,7 +45,8 @@ This plugin requires netbox version 3.5.x to work. Here is s compatibility table
 
 | NetBox Version | Plugin Version |
 |----------------|----------------|
-|       3.5      | 0.0.1 - 1.0.x  |
+|      3.5.0-7   | 0.0.1 - 0.0.6  |
+|      3.5.8     | 0.0.7          |
 
 ## Installing
 
