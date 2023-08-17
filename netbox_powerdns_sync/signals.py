@@ -6,7 +6,7 @@ from django.db.models.signals import post_save
 
 from core.models import Job
 from dcim.models import Device, Interface
-from extras.plugins import get_plugin_config
+from extras.plugins.utils import get_plugin_config
 from ipam.models import IPAddress, FHRPGroup
 from netbox.context import current_request
 from virtualization.models import VirtualMachine, VMInterface
