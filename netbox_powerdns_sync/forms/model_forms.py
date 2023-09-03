@@ -74,11 +74,10 @@ class ZoneForm(NetBoxModelForm):
         ]
 
     def clean(self):
-        data = super().clean()
-        self.clean_match_tags(data)
-        self.clean_match_roles(data)
-        self.clean_naming_methods(data)
-        return data
+        super().clean()
+        self.clean_match_tags(self.cleaned_data)
+        self.clean_match_roles(self.cleaned_data)
+        self.clean_naming_methods(self.cleaned_data)
 
     def clean_match_tags(self, data):
         if not is_reverse(data["name"]):
