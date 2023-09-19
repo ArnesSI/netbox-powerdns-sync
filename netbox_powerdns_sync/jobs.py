@@ -65,19 +65,11 @@ class PowerdnsTask(JobLoggingMixin):
         self.reverse_zone : Zone = None
         self.make_fqdn_ran : bool = False
 
-    def get_pdns_servers_for_zone(self, zone_name) -> list[tuple[ApiServer, powerdns.interface.PDNSServer]]:
+    def get_pdns_servers_for_zone(self, zone_name:str) -> list[ApiServer]:
         if not zone_name:
             return []
         zone = Zone.objects.get(name=zone_name)
-        servers = []
-        for api_server in zone.api_servers.enabled().all():
-            api_client = powerdns.PDNSApiClient(
-                api_endpoint=api_server.api_url,
-                api_key=api_server.api_token,
-            )
-            api = powerdns.PDNSEndpoint(api_client)
-            servers.append((api_server, api.servers[0]))
-        return servers
+        return zone.api_servers.enabled().all()
 
     def add_to_output(self, row):
         if not self.job.data:
@@ -128,8 +120,8 @@ class PowerdnsTask(JobLoggingMixin):
         servers = self.get_pdns_servers_for_zone(dns_record.zone_name)
         if not servers:
             raise PowerdnsSyncNoServers(f"No valid servers found for zone {dns_record.zone_name}")
-        for api_server, pdns_server in self.get_pdns_servers_for_zone(dns_record.zone_name):
-            zone = pdns_server.get_zone(dns_record.zone_name)
+        for api_server in self.get_pdns_servers_for_zone(dns_record.zone_name):
+            zone = api_server.api.get_zone(dns_record.zone_name)
             if not zone:
                 raise PowerdnsSyncServerZoneMissing(
                     f"Zone {dns_record.zone_name} not found on server {api_server}"
@@ -141,8 +133,8 @@ class PowerdnsTask(JobLoggingMixin):
         servers = self.get_pdns_servers_for_zone(dns_record.zone_name)
         if not servers:
             raise PowerdnsSyncNoServers(f"No valid servers found for zone {dns_record.zone_name}")
-        for api_server, pdns_server in self.get_pdns_servers_for_zone(dns_record.zone_name):
-            zone = pdns_server.get_zone(dns_record.zone_name)
+        for api_server in self.get_pdns_servers_for_zone(dns_record.zone_name):
+            zone = api_server.api.get_zone(dns_record.zone_name)
             if not zone:
                 raise PowerdnsSyncServerZoneMissing(
                     f"Zone {dns_record.zone_name} not found on server {api_server}"
@@ -340,8 +332,8 @@ class PowerdnsTaskFullSync(PowerdnsTask):
         servers = self.get_pdns_servers_for_zone(self.zone.name)
         if not servers:
             raise PowerdnsSyncNoServers(f"No valid servers found for zone {self.zone}")
-        for api_server, pdns_server in servers:
-            pdns_zone = pdns_server.get_zone(self.zone.name)
+        for api_server in servers:
+            pdns_zone = api_server.api.get_zone(self.zone.name)
             if not pdns_zone:
                 raise PowerdnsSyncServerZoneMissing(
                     f"Zone {self.zone.name} not found on server {api_server}"

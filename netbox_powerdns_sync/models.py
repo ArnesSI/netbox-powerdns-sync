@@ -1,3 +1,4 @@
+import powerdns
 from django.contrib.contenttypes.models import ContentType
 from django.core.validators import MinLengthValidator
 from django.db import models
@@ -65,6 +66,16 @@ class ApiServer(NetBoxModel):
 
     def __str__(self):
         return self.name
+
+    @property
+    def api(self) -> powerdns.PDNSEndpoint|None:
+        if not self.api_url or not self.api_url:
+            return None
+        api_client = powerdns.PDNSApiClient(
+            api_endpoint=self.api_url,
+            api_key=self.api_token,
+        )
+        return powerdns.PDNSEndpoint(api_client).servers[0]
 
 
 class Zone(NetBoxModel):
