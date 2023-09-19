@@ -207,7 +207,7 @@ class Zone(NetBoxModel):
             raise ValidationError("At least one of naming methods must be set")
 
     def delete(self, *args, **kwargs):
-        # delete any scheduled jobs fot this zone
+        # delete any scheduled jobs for this zone
         if self.pk:
             jobs = Job.objects.filter(
                 object_type_id=ContentType.objects.get_for_model(self).pk,
