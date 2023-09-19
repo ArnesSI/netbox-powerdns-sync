@@ -223,7 +223,7 @@ class Zone(NetBoxModel):
         """ Get the longest matching zone for a given name """
         name = make_canonical(name)
         best_match = None
-        for zone in cls.objects.enabled().all():
+        for zone in cls.objects.all():
             if name.endswith(zone.name):
                 if not best_match or len(best_match.name) < len(zone.name):
                     best_match = zone
@@ -251,25 +251,25 @@ class Zone(NetBoxModel):
                 return zones
 
         # tag on IPAddress
-        zones = cls.objects.enabled().filter(match_ipaddress_tags__in=ip.tags.all())
+        zones = cls.objects.filter(match_ipaddress_tags__in=ip.tags.all())
         zones = filter_mgmt_only(zones, ip)
         if zones:
             return zones
         if isinstance(ip.assigned_object, Interface) or \
             isinstance(ip.assigned_object, VMInterface):
             # tag on Interface or VMInterface
-            zones = cls.objects.enabled().filter(match_interface_tags__in=ip.assigned_object.tags.all())
+            zones = cls.objects.filter(match_interface_tags__in=ip.assigned_object.tags.all())
             zones = filter_mgmt_only(zones, ip)
             if zones:
                 return zones
             # tag on Device or VirtualMachine
             host = get_ip_host(ip)
-            zones = cls.objects.enabled().filter(match_device_tags__in=host.tags.all())
+            zones = cls.objects.filter(match_device_tags__in=host.tags.all())
             zones = filter_mgmt_only(zones, ip)
             if zones:
                 return zones
         if isinstance(ip.assigned_object, FHRPGroup):
-            zones = cls.objects.enabled().filter(match_fhrpgroup_tags__in=ip.assigned_object.tags.all())
+            zones = cls.objects.filter(match_fhrpgroup_tags__in=ip.assigned_object.tags.all())
             zones = filter_mgmt_only(zones, ip)
             if zones:
                 return zones
@@ -283,12 +283,12 @@ class Zone(NetBoxModel):
             except AttributeError:
                 continue
         if role:
-            zones = cls.objects.enabled().filter(match_device_roles__in=[role])
+            zones = cls.objects.filter(match_device_roles__in=[role])
             zones = filter_mgmt_only(zones, ip)
             if zones:
                 return zones
         # default zone
-        zones = cls.objects.enabled().filter(is_default=True)
+        zones = cls.objects.filter(is_default=True)
         zones = filter_mgmt_only(zones, ip)
         if zones:
             return zones
