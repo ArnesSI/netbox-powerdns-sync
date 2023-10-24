@@ -278,7 +278,7 @@ class PowerdnsTaskFullSync(PowerdnsTask):
         query_zone |= Q(interface__device__tags__in=self.zone.match_device_tags.all())
         query_zone |= Q(vminterface__virtual_machine__tags__in=self.zone.match_device_tags.all())
         query_zone |= Q(fhrpgroup__tags__in=self.zone.match_fhrpgroup_tags.all())
-        query_zone |= Q(interface__device__device_role__in=self.zone.match_device_roles.all())
+        query_zone |= Q(interface__device__role__in=self.zone.match_device_roles.all())
         query_zone |= Q(vminterface__virtual_machine__role__in=self.zone.match_device_roles.all())
         results = IPAddress.objects.filter(query_zone)
         if self.zone.match_interface_mgmt_only:

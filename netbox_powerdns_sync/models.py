@@ -273,15 +273,10 @@ class Zone(NetBoxModel):
             zones = filter_mgmt_only(zones, ip)
             if zones:
                 return zones
-        # role or device_role
         host = get_ip_host(ip)
         role = None
-        # try: Device.device_role, VirtualMachine.role
-        for role_name in ("device_role", "role"): 
-            try:
-                role = getattr(host, role_name)
-            except AttributeError:
-                continue
+        if host:
+            role = host.role
         if role:
             zones = cls.objects.filter(match_device_roles__in=[role])
             zones = filter_mgmt_only(zones, ip)
