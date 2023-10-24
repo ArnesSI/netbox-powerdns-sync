@@ -10,7 +10,7 @@ class NetBoxPowerdnsSyncConfig(PluginConfig):
     author = "Matej Vadnjal"
     author_email = "matej.vadnjal@arnes.si"
     base_url = "powerdns-sync"
-    min_version = "3.5.8"
+    min_version = "3.6.0"
     default_settings = {
         "ttl_custom_field": None,
         "powerdns_managed_record_comment": "netbox-powerdns-sync",
