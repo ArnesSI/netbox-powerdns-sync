@@ -335,8 +335,11 @@ class PowerdnsTaskFullSync(PowerdnsTask):
 
     def get_addresses(self):
         """Get IPAddress objects that could have DNS records"""
+        self.log_debug(f"Getting addresses for zone {self.zone}")
+
         zone_canonical = self.zone.name
         zone_domain = self.zone.name.rstrip(".")
+        
         # filter for FQDN names (ip.dns_name, Device, VM, FHRPGroup)
         query_zone = Q(dns_name__endswith=zone_canonical) | Q(
             dns_name__endswith=zone_domain
