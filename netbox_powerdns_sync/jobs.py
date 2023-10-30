@@ -114,12 +114,16 @@ class PowerdnsTask(JobLoggingMixin):
 
     def make_reverse_domain(self) -> str|None:
         """ Returns reverse domain name """
+        self.log_debug(f"Making reverse domain for {self.ip}")
         return make_canonical(self.ip.address.ip.reverse_dns)
 
     def create_record(self, dns_record: DnsRecord) -> None:
+        
         servers = self.get_pdns_servers_for_zone(dns_record.zone_name)
+        
         if not servers:
             raise PowerdnsSyncNoServers(f"No valid servers found for zone {dns_record.zone_name}")
+        
         for api_server in self.get_pdns_servers_for_zone(dns_record.zone_name):
             zone = api_server.api.get_zone(dns_record.zone_name)
             if not zone:
@@ -146,7 +150,8 @@ class PowerdnsTask(JobLoggingMixin):
 class PowerdnsTaskIP(PowerdnsTask):
     def __init__(self, job: Job) -> None:
         super().__init__(job)
-        self.ip : IPAddress = job.object
+        self.ip: IPAddress = job.object
+        self.log_debug(f"IP: {self.ip}")
 
     @classmethod
     def run_update_ip(cls, job: Job, *args, **kwargs) -> None:
@@ -174,10 +179,15 @@ class PowerdnsTaskIP(PowerdnsTask):
 
     def create_forward(self) -> None:
         self.make_fqdn()
+        
         if not self.forward_zone:
             raise PowerdnsSyncNoZoneFound(f"No forward zone found for IP:{self.ip}")
         if not self.fqdn:
             raise PowerdnsSyncNoNameFound(f"No forward name for IP:{self.ip} (zone:{self.forward_zone})")
+        
+        self.log_debug(f"Forward FQDN: {self.fqdn}")
+        self.log_debug(f"Forward Zone: {self.forward_zone}")
+        
         name = self.fqdn.replace(self.forward_zone.name, "").rstrip(".")
         dns_record = DnsRecord(
             name=name,
@@ -228,7 +238,9 @@ class PowerdnsTaskFullSync(PowerdnsTask):
                 task.log_warning(f"Zone {task.zone} is disabled for updates, not syncing")
                 task.job.terminate()
                 return
+            task.log_debug("Loading Netbox records")
             netbox_records = task.load_netbox_records()
+            task.log_debug("Loading Powerdns records")
             pdns_records = task.load_pdns_records()
             task.log_info(f"Found record count: netbox:{len(netbox_records)} pdns:{len(pdns_records)}")
             to_delete = pdns_records - netbox_records
@@ -266,6 +278,8 @@ class PowerdnsTaskFullSync(PowerdnsTask):
         """ Get IPAddress objects that could have DNS records """
         zone_canonical = self.zone.name
         zone_domain = self.zone.name.rstrip(".")
+        self.log_debug(f"Zone canonical: {zone_canonical}")
+        self.log_debug(f"Zone domain: {zone_domain}")
         # filter for FQDN names (ip.dns_name, Device, VM, FHRPGroup)
         query_zone = Q(dns_name__endswith=zone_canonical)|Q(dns_name__endswith=zone_domain)
         query_zone |= Q(interface__device__name__endswith=zone_canonical)|Q(interface__device__name__endswith=zone_domain)
@@ -289,8 +303,10 @@ class PowerdnsTaskFullSync(PowerdnsTask):
         records = set()
         ip: IPAddress
         ip_addresses = self.get_addresses()
+        
         self.log_info(f"Found {ip_addresses.count()} matching addresses to check")
         for ip in ip_addresses:
+            self.log_debug(f"Checking IP: {ip}")
             self.init_attrs()
             self.ip = ip
             self.make_fqdn()
