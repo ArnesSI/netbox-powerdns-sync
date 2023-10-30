@@ -340,7 +340,9 @@ class PowerdnsTaskFullSync(PowerdnsTask):
         self.log_debug(f"Getting addresses for zone {self.zone}")
 
         zone_canonical = self.zone.name
+        self.log_debug(f"Canonical zone name: {zone_canonical}")
         zone_domain = self.zone.name.rstrip(".")
+        self.log_debug(f"Domain zone name: {zone_domain}")
 
         # filter for FQDN names (ip.dns_name, Device, VM, FHRPGroup)
         query_zone = Q(dns_name__endswith=zone_canonical) | Q(
