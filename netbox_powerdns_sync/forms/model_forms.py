@@ -95,12 +95,16 @@ class ZoneForm(NetBoxModelForm):
     def clean_match_roles(self, data):
         if not is_reverse(data["name"]):
             return
+        
         if data.get("match_device_roles"):
             self.add_error("match_device_roles", "Cannot set match roles for reverse zone")
 
     def clean_naming_methods(self, data):
         if not is_reverse(data["name"]):
             return
+        else:
+            return
+        
         fields = (
             "naming_ip_method",
             "naming_device_method",
