@@ -334,24 +334,13 @@ class PowerdnsTaskFullSync(PowerdnsTask):
                 schedule_at=new_scheduled_time,
                 interval=job.interval,
             )
-        
+
     def get_addresses(self):
-        """
-        Retrieves IP addresses based on the specified zone and matching criteria.
-
-        Returns:
-            QuerySet: A queryset of IP addresses.
-
-        Examples:
-            >>> get_addresses()
-        """
-
+        """Get IPAddress objects that could have DNS records"""
         self.log_debug(f"Getting addresses for zone {self.zone}")
 
         zone_canonical = self.zone.name
-        self.log_debug(f"Canonical zone name: {zone_canonical}")
         zone_domain = self.zone.name.rstrip(".")
-        self.log_debug(f"Domain zone name: {zone_domain}")
 
         # filter for FQDN names (ip.dns_name, Device, VM, FHRPGroup)
         query_zone = Q(dns_name__endswith=zone_canonical) | Q(
@@ -382,20 +371,11 @@ class PowerdnsTaskFullSync(PowerdnsTask):
         results = IPAddress.objects.filter(query_zone)
         if self.zone.match_interface_mgmt_only:
             results = results.filter(interface__mgmt_only=True)
-
+        self.log_debug(results)
         return results
 
     def load_netbox_records(self) -> set[DnsRecord]:
-        """
-        Loads DNS records from NetBox.
-
-        Returns:
-            set[DnsRecord]: A set of DNS records.
-
-        Examples:
-            >>> load_netbox_records()
-        """
-
+        
         records = set()
         
         ip: IPAddress
