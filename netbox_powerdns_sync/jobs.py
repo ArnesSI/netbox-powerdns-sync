@@ -304,8 +304,10 @@ class PowerdnsTaskFullSync(PowerdnsTask):
                 f"Record change count: to_delete:{len(to_delete)} to_create:{len(to_create)}"
             )
             for record in to_delete:
+                task.log_debug(f"Deleting record {record}")
                 task.delete_record(record)
             for record in to_create:
+                task.log_debug(f"Creating record {record}")
                 task.create_record(record)
             task.log_success("Finished")
             task.job.terminate()
@@ -339,7 +341,7 @@ class PowerdnsTaskFullSync(PowerdnsTask):
 
         zone_canonical = self.zone.name
         zone_domain = self.zone.name.rstrip(".")
-        
+
         # filter for FQDN names (ip.dns_name, Device, VM, FHRPGroup)
         query_zone = Q(dns_name__endswith=zone_canonical) | Q(
             dns_name__endswith=zone_domain
@@ -369,13 +371,28 @@ class PowerdnsTaskFullSync(PowerdnsTask):
         results = IPAddress.objects.filter(query_zone)
         if self.zone.match_interface_mgmt_only:
             results = results.filter(interface__mgmt_only=True)
+        self.log_debug(results)
         return results
 
     def load_netbox_records(self) -> set[DnsRecord]:
+        """
+        Loads DNS records from NetBox.
+
+        Returns:
+            set[DnsRecord]: A set of DNS records.
+
+        Examples:
+            >>> load_netbox_records()
+        """
+
         records = set()
+        
         ip: IPAddress
         ip_addresses = self.get_addresses()
+        
+        self.log_debug(ip_addresses)
         self.log_info(f"Found {ip_addresses.count()} matching addresses to check")
+        
         for ip in ip_addresses:
             self.init_attrs()
             self.ip = ip
