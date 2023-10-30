@@ -289,19 +289,21 @@ class PowerdnsTaskFullSync(PowerdnsTask):
 
         parts = zone_domain.split(".")
         if len(parts) >= 3 and parts[-1] == "in-addr" and parts[-2] == "arpa":
-            if len(parts) == 4:  # /24
+            self.log_debug(f"Zone is reverse zone, looking for prefixes")
+            if len(parts) == 4:
                 base_ip = f"{parts[2]}.{parts[1]}.{parts[0]}.0"
                 network_cidr = IPNetwork(f"{base_ip}/24")
-            elif len(parts) == 3:  # /16
+            elif len(parts) == 3:
                 base_ip = f"{parts[1]}.{parts[0]}.0.0"
                 network_cidr = IPNetwork(f"{base_ip}/16")
-            elif len(parts) == 2:  # /8
+            elif len(parts) == 2:
                 base_ip = f"{parts[0]}.0.0.0"
                 network_cidr = IPNetwork(f"{base_ip}/8")
             else:
                 network_cidr = None
 
             if network_cidr:
+                self.log_debug(f"Prefix found, going to check for hosts between {network_cidr.network} and {network_cidr.broadcast}")
                 # Query any address within the CIDR range
                 query_zone |= Q(address__net_host__gte=str(network_cidr.network), address__net_host__lte=str(network_cidr.broadcast))
 
