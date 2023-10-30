@@ -11,7 +11,21 @@ __all__ = (
     "ApiServerForm",
     "ZoneForm",
 )
+class ApiServerForm(NetBoxModelForm):
+    """
+    Form for creating or updating an API server.
 
+    Args:
+        self: The instance of the form.
+
+    Attributes:
+        fieldsets (tuple): The fieldsets for the form.
+    
+    Meta:
+        model (ApiServer): The model associated with the form.
+        fields (list): The fields to include in the form.
+
+    """
 
 class ApiServerForm(NetBoxModelForm):
     fieldsets = (
