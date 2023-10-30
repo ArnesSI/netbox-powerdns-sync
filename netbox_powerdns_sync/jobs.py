@@ -292,17 +292,19 @@ class PowerdnsTaskFullSync(PowerdnsTask):
         parts = zone_domain.split(".")
         if len(parts) >= 3 and parts[-2] == "in-addr" and parts[-1] == "arpa":
             self.log_debug(f"Zone is reverse zone, looking for prefixes")
-            if len(parts) == 4:
-                base_ip = f"{parts[2]}.{parts[1]}.{parts[0]}.0"
-                network_cidr = IPNetwork(f"{base_ip}/24")
-            elif len(parts) == 3:
-                base_ip = f"{parts[1]}.{parts[0]}.0.0"
-                network_cidr = IPNetwork(f"{base_ip}/16")
-            elif len(parts) == 2:
-                base_ip = f"{parts[0]}.0.0.0"
-                network_cidr = IPNetwork(f"{base_ip}/8")
-            else:
-                network_cidr = None
+
+            if len(parts) >= 3 and parts[-2] == "in-addr" and parts[-1] == "arpa":
+                if len(parts) == 5:  # e.g., 0.72.10.in-addr.arpa -> 10.72.0.0/24
+                    base_ip = f"{parts[2]}.{parts[1]}.{parts[0]}.0"
+                    network_cidr = IPNetwork(f"{base_ip}/24")
+                elif len(parts) == 4:  # e.g., 72.10.in-addr.arpa -> 10.72.0.0/16
+                    base_ip = f"{parts[1]}.{parts[0]}.0.0"
+                    network_cidr = IPNetwork(f"{base_ip}/16")
+                elif len(parts) == 3:  # e.g., 10.in-addr.arpa -> 10.0.0.0/8
+                    base_ip = f"{parts[0]}.0.0.0"
+                    network_cidr = IPNetwork(f"{base_ip}/8")
+                else:
+                    network_cidr = None
 
             if network_cidr:
                 self.log_debug(f"Prefix found, going to check for hosts between {network_cidr.network} and {network_cidr.broadcast}")
