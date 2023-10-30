@@ -290,7 +290,7 @@ class PowerdnsTaskFullSync(PowerdnsTask):
 
         self.log_debug("Checking if this is a rdns zone")
         parts = zone_domain.split(".")
-        if len(parts) >= 3 and parts[-1] == "in-addr" and parts[-2] == "arpa":
+        if len(parts) >= 3 and parts[-2] == "in-addr" and parts[-1] == "arpa":
             self.log_debug(f"Zone is reverse zone, looking for prefixes")
             if len(parts) == 4:
                 base_ip = f"{parts[2]}.{parts[1]}.{parts[0]}.0"
