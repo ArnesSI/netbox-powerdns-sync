@@ -358,17 +358,18 @@ class PowerdnsTaskFullSync(PowerdnsTask):
                 ))
 
             if self.zone.is_reverse:
-                self.log_debug(f"Reverse zone found for IP:{ip} (zone:{self.forward_zone})")
                 reverse_fqdn = self.make_reverse_domain()
                 self.log_debug(f"Reverse FQDN: {reverse_fqdn}")
                 self.reverse_zone = Zone.get_best_zone(reverse_fqdn)
-                self.log_debug(f"Reverse zone: {self.reverse_zone}")
-                
+                self.log_debug(f"Reverse zone found for IP:{ip} (zone:{self.reverse_zone})")
+
                 if not self.reverse_zone:
                     self.log_info(f"No matching reverse zone for {ip} ({self.fqdn}). Skipping")
                     continue
+                
                 if self.reverse_zone == self.zone:
                     name = reverse_fqdn.replace(self.reverse_zone.name, "").rstrip(".")
+                    self.log_debug(f"Reverse name: {name} - {self.fqdn} - {self.reverse_zone.name}")
                     records.add(DnsRecord(
                         name=name,
                         data=self.fqdn,
