@@ -395,5 +395,7 @@ class PowerdnsTaskFullSync(PowerdnsTask):
                 if record["type"] not in checked_types:
                     self.log_debug(f"Skipping record {record['name']} because of type {record['type']}")
                     continue
+                else:
+                    self.log_debug(f"Processing record {record['name']}")
                 flat_records.update(DnsRecord.from_pdns_record(record, pdns_zone))
         return flat_records
