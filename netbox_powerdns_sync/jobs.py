@@ -18,6 +18,7 @@ from .naming import generate_fqdn
 from .record import DnsRecord
 from .utils import get_ip_ttl, make_dns_label, make_canonical
 
+from netaddr import IPNetwork
 
 logger = logging.getLogger("netbox.netbox_powerdns_sync.jobs")
 
@@ -285,6 +286,26 @@ class PowerdnsTaskFullSync(PowerdnsTask):
         query_zone |= Q(interface__device__name__endswith=zone_canonical)|Q(interface__device__name__endswith=zone_domain)
         query_zone |= Q(vminterface__virtual_machine__name__endswith=zone_canonical)|Q(vminterface__virtual_machine__name__endswith=zone_domain)
         query_zone |= Q(fhrpgroup__name__endswith=zone_canonical)|Q(fhrpgroup__name__endswith=zone_domain)
+
+        parts = zone_domain.split(".")
+        if len(parts) >= 3 and parts[-1] == "in-addr" and parts[-2] == "arpa":
+            if len(parts) == 4:  # /24
+                base_ip = f"{parts[2]}.{parts[1]}.{parts[0]}.0"
+                network_cidr = IPNetwork(f"{base_ip}/24")
+            elif len(parts) == 3:  # /16
+                base_ip = f"{parts[1]}.{parts[0]}.0.0"
+                network_cidr = IPNetwork(f"{base_ip}/16")
+            elif len(parts) == 2:  # /8
+                base_ip = f"{parts[0]}.0.0.0"
+                network_cidr = IPNetwork(f"{base_ip}/8")
+            else:
+                network_cidr = None
+
+            if network_cidr:
+                # Query any address within the CIDR range
+                query_zone |= Q(address__net_host__gte=str(network_cidr.network), address__net_host__lte=str(network_cidr.broadcast))
+
+
         # filter for matchers (tags & roles)
         query_zone |= Q(tags__in=self.zone.match_ipaddress_tags.all())
         query_zone |= Q(interface__tags__in=self.zone.match_interface_tags.all())
