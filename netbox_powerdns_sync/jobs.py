@@ -309,7 +309,7 @@ class PowerdnsTaskFullSync(PowerdnsTask):
             if network_cidr:
                 self.log_debug(f"Prefix found, going to check for hosts between {network_cidr.network} and {network_cidr.broadcast}")
                 # Query any address within the CIDR range
-                query_zone |= Q(address__net_host__gte=str(network_cidr.network), address__net_host__lte=str(network_cidr.broadcast))
+                query_zone |= Q(address__net_host_contained=network_cidr)
         else:
             self.log_debug("No rDNS zone found.")
 
