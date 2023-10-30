@@ -281,12 +281,14 @@ class PowerdnsTaskFullSync(PowerdnsTask):
         zone_domain = self.zone.name.rstrip(".")
         self.log_debug(f"Zone canonical: {zone_canonical}")
         self.log_debug(f"Zone domain: {zone_domain}")
+
         # filter for FQDN names (ip.dns_name, Device, VM, FHRPGroup)
         query_zone = Q(dns_name__endswith=zone_canonical)|Q(dns_name__endswith=zone_domain)
         query_zone |= Q(interface__device__name__endswith=zone_canonical)|Q(interface__device__name__endswith=zone_domain)
         query_zone |= Q(vminterface__virtual_machine__name__endswith=zone_canonical)|Q(vminterface__virtual_machine__name__endswith=zone_domain)
         query_zone |= Q(fhrpgroup__name__endswith=zone_canonical)|Q(fhrpgroup__name__endswith=zone_domain)
 
+        self.log_debug("Checking if this is a rdns zone")
         parts = zone_domain.split(".")
         if len(parts) >= 3 and parts[-1] == "in-addr" and parts[-2] == "arpa":
             self.log_debug(f"Zone is reverse zone, looking for prefixes")
@@ -306,6 +308,8 @@ class PowerdnsTaskFullSync(PowerdnsTask):
                 self.log_debug(f"Prefix found, going to check for hosts between {network_cidr.network} and {network_cidr.broadcast}")
                 # Query any address within the CIDR range
                 query_zone |= Q(address__net_host__gte=str(network_cidr.network), address__net_host__lte=str(network_cidr.broadcast))
+        else:
+            self.log_debug("No rDNS zone found.")
 
 
         # filter for matchers (tags & roles)
@@ -379,7 +383,7 @@ class PowerdnsTaskFullSync(PowerdnsTask):
                 )
             for record in pdns_zone.records:
                 if record["type"] not in checked_types:
-                    self.log_debug("Skipping record type {record['type']}")
+                    self.log_debug(f"Skipping record type {record['type']}")
                     continue
                 flat_records.update(DnsRecord.from_pdns_record(record, pdns_zone))
         return flat_records
