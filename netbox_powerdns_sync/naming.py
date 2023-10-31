@@ -70,10 +70,35 @@ class NamingBase:
 
 class NamingDeviceByInterfacePrimary(NamingBase):
     """
-    Generate name in formatted as: interface.device.zone
-    If IP is primary, don't prepend interface name
+    Generate a DNS name based on the host and interface attributes.
+
+    Returns:
+        str|None: The generated DNS name, or None if the host attribute is None.
+
+    Raises:
+        None
+
+    Examples:
+        >>> obj = NamingDeviceByInterfacePrimary()
+        >>> obj.make_name()
+        'example.com'
     """
     def make_name(self) -> str|None:
+        """
+        Generate a DNS name based on the host and interface attributes.
+
+        Returns:
+            str|None: The generated DNS name, or None if the host attribute is None.
+
+        Raises:
+            None
+
+        Examples:
+            >>> obj = ClassName()
+            >>> obj.make_name()
+            'example.com'
+        """
+
         self._populate_host_interface()
         if self.host:
             name = self.host.name

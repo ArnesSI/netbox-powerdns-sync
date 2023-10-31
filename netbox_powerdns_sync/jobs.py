@@ -15,6 +15,7 @@ from virtualization.models import VirtualMachine, VMInterface
 from .exceptions import *
 from .models import ApiServer, Zone
 from .naming import generate_fqdn
+from .naming import NamingDeviceByInterfacePrimary
 from .record import DnsRecord
 from .utils import get_ip_ttl, make_dns_label, make_canonical
 
@@ -203,8 +204,10 @@ class PowerdnsTaskIP(PowerdnsTask):
 
     def create_reverse(self) -> None:
         self.make_fqdn()
+
         if not self.fqdn:
             raise PowerdnsSyncNoNameFound(f"No forward name for IP:{self.ip}")
+        
         reverse_fqdn = self.make_reverse_domain()
         self.reverse_zone = Zone.get_best_zone(reverse_fqdn)
         if not self.reverse_zone:
@@ -370,6 +373,11 @@ class PowerdnsTaskFullSync(PowerdnsTask):
                 if self.reverse_zone == self.zone:
                     name = reverse_fqdn.replace(self.reverse_zone.name, "").rstrip(".")
                     self.log_debug(f"Reverse name: {name} - {self.fqdn} - {self.reverse_zone.name}")
+
+                    # Try to create a name here using the NamingDeviceByInterfacePrimary method
+
+                    name = NamingDeviceByInterfacePrimary().make_name()
+
                     records.add(DnsRecord(
                         name=name,
                         data=self.fqdn,
@@ -397,5 +405,6 @@ class PowerdnsTaskFullSync(PowerdnsTask):
                     continue
                 else:
                     self.log_debug(f"Processing record {record['name']}")
+
                 flat_records.update(DnsRecord.from_pdns_record(record, pdns_zone))
         return flat_records
