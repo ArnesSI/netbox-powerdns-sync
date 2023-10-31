@@ -377,7 +377,7 @@ class PowerdnsTaskFullSync(PowerdnsTask):
                     # Try to create a name here using the NamingDeviceByInterfacePrimary method
 
                     name = NamingDeviceByInterfacePrimary(ip, self.reverse_zone).make_name()
-
+                    self.log_debug(f"Generated name: {name}")
                     records.add(DnsRecord(
                         name=name,
                         data=self.fqdn,
