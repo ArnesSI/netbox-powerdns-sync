@@ -155,7 +155,7 @@ class NamingDeviceByInterfacePrimary(NamingBase):
                     + "."
                     + name
                     + "."
-                    + self.zone.name
+                    + "productsup.int."
                 )
             return name
 
