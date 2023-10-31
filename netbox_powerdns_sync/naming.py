@@ -148,7 +148,7 @@ class NamingDeviceByInterfacePrimary(NamingBase):
             # this doesnt make much sense
             #if self.ip != self.host.primary_ip4 and self.ip != self.host.primary_ip6:
             if self.interface and self.interface.name:
-                name = make_dns_label(self.interface.name) + "." + name + "." + self.zone
+                name = make_dns_label(self.interface.name) + "." + name + "." + self.zone.name
             return name
 
 
