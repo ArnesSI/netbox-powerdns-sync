@@ -374,9 +374,11 @@ class PowerdnsTaskFullSync(PowerdnsTask):
                     name = reverse_fqdn.replace(self.reverse_zone.name, "").rstrip(".")
                     self.log_debug(f"Reverse name: {name} - {self.fqdn} - {self.reverse_zone.name}")
                     
+                    # Use the NamingDeviceByInterfacePrimary function to generate the data field:
+
                     records.add(DnsRecord(
                         name=name,
-                        data=self.fqdn,
+                        data=str(NamingDeviceByInterfacePrimary(ip, self.reverse_zone).make_name()),
                         dns_type=PTR_TYPE,
                         zone_name=self.reverse_zone.name,
                         ttl=get_ip_ttl(ip) or self.reverse_zone.default_ttl,
