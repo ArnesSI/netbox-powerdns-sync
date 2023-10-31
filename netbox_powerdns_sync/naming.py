@@ -107,11 +107,7 @@ class NamingBase:
         if isinstance(self.ip.assigned_object, Interface):
             self.interface = self.ip.assigned_object
             self.host = self.ip.assigned_object.device
-            # set self.tld with the custom_field named 'domain' of the device
             
-
-            
-            self.tld = 
         elif isinstance(self.ip.assigned_object, VMInterface):
             self.interface = self.ip.assigned_object
             self.host = self.ip.assigned_object.virtual_machine
