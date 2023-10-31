@@ -1,25 +1,28 @@
 import logging
-import powerdns
 import traceback
 from datetime import timedelta
-from django.db.models import Q
 
 from core.choices import JobStatusChoices
 from core.models import Job
 from dcim.models import Device, Interface
+from django.db.models import Q
 from extras.choices import LogLevelChoices
-from ipam.models import IPAddress, FHRPGroup
-from netbox_powerdns_sync.constants import FAMILY_TYPES, PTR_TYPE
+from ipam.models import FHRPGroup, IPAddress
+from netaddr import IPNetwork
 from virtualization.models import VirtualMachine, VMInterface
 
-from .exceptions import *
-from .models import ApiServer, Zone
-from .naming import generate_fqdn
-from .naming import NamingDeviceByInterfacePrimary
-from .record import DnsRecord
-from .utils import get_ip_ttl, make_dns_label, make_canonical
+from netbox_powerdns_sync.constants import FAMILY_TYPES, PTR_TYPE
 
-from netaddr import IPNetwork
+from .exceptions import (
+    PowerdnsSyncNoNameFound,
+    PowerdnsSyncNoServers,
+    PowerdnsSyncNoZoneFound,
+    PowerdnsSyncServerZoneMissing,
+)
+from .models import ApiServer, Zone
+from .naming import NamingDeviceByInterfacePrimary, generate_fqdn
+from .record import DnsRecord
+from .utils import get_ip_ttl, make_canonical, make_dns_label
 
 logger = logging.getLogger("netbox.netbox_powerdns_sync.jobs")
 
@@ -28,13 +31,15 @@ class JobLoggingMixin:
     def log(self, level: str, msg: str) -> None:
         data = self.job.data or {}
         logs = data.get("log", [])
-        logs.append({
-            "message": msg,
-            "status": level,
-        })
+        logs.append(
+            {
+                "message": msg,
+                "status": level,
+            }
+        )
         data["log"] = logs
         self.job.data = data
-    
+
     def log_debug(self, msg: str) -> None:
         logger.debug(msg)
         self.log(LogLevelChoices.LOG_DEFAULT, msg)
@@ -60,14 +65,14 @@ class PowerdnsTask(JobLoggingMixin):
     def __init__(self, job: Job) -> None:
         self.job = job
         self.init_attrs()
-    
-    def init_attrs(self):
-        self.fqdn : str = ""
-        self.forward_zone : Zone = None
-        self.reverse_zone : Zone = None
-        self.make_fqdn_ran : bool = False
 
-    def get_pdns_servers_for_zone(self, zone_name:str) -> list[ApiServer]:
+    def init_attrs(self):
+        self.fqdn: str = ""
+        self.forward_zone: Zone = None
+        self.reverse_zone: Zone = None
+        self.make_fqdn_ran: bool = False
+
+    def get_pdns_servers_for_zone(self, zone_name: str) -> list[ApiServer]:
         if not zone_name:
             return []
         zone = Zone.objects.get(name=zone_name)
@@ -80,7 +85,9 @@ class PowerdnsTask(JobLoggingMixin):
             self.job.data["output"] = []
         self.job.data["output"].append(row)
 
-    def make_name_from_interface(self, interface: Interface|VMInterface, host: Device|VirtualMachine) -> str:
+    def make_name_from_interface(
+        self, interface: Interface | VMInterface, host: Device | VirtualMachine
+    ) -> str:
         name = host.name
         name = ".".join(map(make_dns_label, name.split(".")))
         if self.ip != host.primary_ip4 and self.ip != host.primary_ip6:
@@ -88,7 +95,7 @@ class PowerdnsTask(JobLoggingMixin):
         return name
 
     def make_fqdn(self) -> str:
-        """ Determines FQDN and sets forward zone """
+        """Determines FQDN and sets forward zone"""
         if self.make_fqdn_ran:
             return self.fqdn
         self.make_fqdn_ran = True
@@ -114,38 +121,55 @@ class PowerdnsTask(JobLoggingMixin):
             self.forward_zone = Zone.match_ip(self.ip).first()
         return self.forward_zone
 
-    def make_reverse_domain(self) -> str|None:
-        """ Returns reverse domain name """
+    def make_reverse_domain(self) -> str | None:
+        """Returns reverse domain name"""
         self.log_debug(f"Making reverse domain for {self.ip}")
         return make_canonical(self.ip.address.ip.reverse_dns)
 
     def create_record(self, dns_record: DnsRecord) -> None:
-        
         servers = self.get_pdns_servers_for_zone(dns_record.zone_name)
-        
+
         if not servers:
-            raise PowerdnsSyncNoServers(f"No valid servers found for zone {dns_record.zone_name}")
-        
+            raise PowerdnsSyncNoServers(
+                f"No valid servers found for zone {dns_record.zone_name}"
+            )
+
         for api_server in self.get_pdns_servers_for_zone(dns_record.zone_name):
             zone = api_server.api.get_zone(dns_record.zone_name)
             if not zone:
                 raise PowerdnsSyncServerZoneMissing(
                     f"Zone {dns_record.zone_name} not found on server {api_server}"
                 )
-            self.add_to_output({"action": "CREATE", "rr": str(dns_record), "zone": str(zone), "server": str(api_server)})
+            self.add_to_output(
+                {
+                    "action": "CREATE",
+                    "rr": str(dns_record),
+                    "zone": str(zone),
+                    "server": str(api_server),
+                }
+            )
             zone.create_records([dns_record.as_rrset()])
 
     def delete_record(self, dns_record: DnsRecord) -> None:
         servers = self.get_pdns_servers_for_zone(dns_record.zone_name)
         if not servers:
-            raise PowerdnsSyncNoServers(f"No valid servers found for zone {dns_record.zone_name}")
+            raise PowerdnsSyncNoServers(
+                f"No valid servers found for zone {dns_record.zone_name}"
+            )
         for api_server in self.get_pdns_servers_for_zone(dns_record.zone_name):
             zone = api_server.api.get_zone(dns_record.zone_name)
             if not zone:
                 raise PowerdnsSyncServerZoneMissing(
                     f"Zone {dns_record.zone_name} not found on server {api_server}"
                 )
-            self.add_to_output({"action": "DELETE", "rr": str(dns_record), "zone": str(zone), "server": str(api_server)})
+            self.add_to_output(
+                {
+                    "action": "DELETE",
+                    "rr": str(dns_record),
+                    "zone": str(zone),
+                    "server": str(api_server),
+                }
+            )
             zone.delete_records([dns_record.as_rrset()])
 
 
@@ -160,7 +184,9 @@ class PowerdnsTaskIP(PowerdnsTask):
         task = cls(job)
         if job.object_id and not job.object:
             task.job.start()
-            task.log_warning("No IP Address object given. IP was probably removed or DB transaction aborted, nothing to do.")
+            task.log_warning(
+                "No IP Address object given. IP was probably removed or DB transaction aborted, nothing to do."
+            )
             task.job.terminate(status=JobStatusChoices.STATUS_COMPLETED)
             return
         try:
@@ -181,15 +207,17 @@ class PowerdnsTaskIP(PowerdnsTask):
 
     def create_forward(self) -> None:
         self.make_fqdn()
-        
+
         if not self.forward_zone:
             raise PowerdnsSyncNoZoneFound(f"No forward zone found for IP:{self.ip}")
         if not self.fqdn:
-            raise PowerdnsSyncNoNameFound(f"No forward name for IP:{self.ip} (zone:{self.forward_zone})")
-        
+            raise PowerdnsSyncNoNameFound(
+                f"No forward name for IP:{self.ip} (zone:{self.forward_zone})"
+            )
+
         self.log_debug(f"Forward FQDN: {self.fqdn}")
         self.log_debug(f"Forward Zone: {self.forward_zone}")
-        
+
         name = self.fqdn.replace(self.forward_zone.name, "").rstrip(".")
         dns_record = DnsRecord(
             name=name,
@@ -207,11 +235,13 @@ class PowerdnsTaskIP(PowerdnsTask):
 
         if not self.fqdn:
             raise PowerdnsSyncNoNameFound(f"No forward name for IP:{self.ip}")
-        
+
         reverse_fqdn = self.make_reverse_domain()
         self.reverse_zone = Zone.get_best_zone(reverse_fqdn)
         if not self.reverse_zone:
-            self.log_warning(f"No reverse zone for IP:{self.ip} fqdn:{self.fqdn} Skipping")
+            self.log_warning(
+                f"No reverse zone for IP:{self.ip} fqdn:{self.fqdn} Skipping"
+            )
             return
         name = reverse_fqdn.replace(self.reverse_zone.name, "").rstrip(".")
         dns_record = DnsRecord(
@@ -229,7 +259,7 @@ class PowerdnsTaskIP(PowerdnsTask):
 class PowerdnsTaskFullSync(PowerdnsTask):
     def __init__(self, job: Job) -> None:
         super().__init__(job)
-        self.zone : Zone = job.object
+        self.zone: Zone = job.object
 
     @classmethod
     def run_full_sync(cls, job: Job, *args, **kwargs) -> None:
@@ -239,17 +269,23 @@ class PowerdnsTaskFullSync(PowerdnsTask):
             task.log_debug(f"Starting sync for zone {task.zone}")
             task.job.start()
             if not task.zone.enabled:
-                task.log_warning(f"Zone {task.zone} is disabled for updates, not syncing")
+                task.log_warning(
+                    f"Zone {task.zone} is disabled for updates, not syncing"
+                )
                 task.job.terminate()
                 return
             task.log_debug("Loading Netbox records")
             netbox_records = task.load_netbox_records()
             task.log_debug("Loading Powerdns records")
             pdns_records = task.load_pdns_records()
-            task.log_info(f"Found record count: netbox:{len(netbox_records)} pdns:{len(pdns_records)}")
+            task.log_info(
+                f"Found record count: netbox:{len(netbox_records)} pdns:{len(pdns_records)}"
+            )
             to_delete = pdns_records - netbox_records
             to_create = netbox_records - pdns_records
-            task.log_info(f"Record change count: to_delete:{len(to_delete)} to_create:{len(to_create)}")
+            task.log_info(
+                f"Record change count: to_delete:{len(to_delete)} to_create:{len(to_create)}"
+            )
             for record in to_delete:
                 task.delete_record(record)
             for record in to_create:
@@ -262,7 +298,9 @@ class PowerdnsTaskFullSync(PowerdnsTask):
             task.job.terminate(status=JobStatusChoices.STATUS_ERRORED)
         except Exception as e:
             stacktrace = traceback.format_exc()
-            task.log_failure(f"An exception occurred: `{type(e).__name__}: {e}`\n```\n{stacktrace}\n```")
+            task.log_failure(
+                f"An exception occurred: `{type(e).__name__}: {e}`\n```\n{stacktrace}\n```"
+            )
             task.job.data = task.job.data or dict()
             task.job.terminate(status=JobStatusChoices.STATUS_ERRORED)
 
@@ -279,17 +317,25 @@ class PowerdnsTaskFullSync(PowerdnsTask):
             )
 
     def get_addresses(self):
-        """ Get IPAddress objects that could have DNS records """
+        """Get IPAddress objects that could have DNS records"""
         zone_canonical = self.zone.name
         zone_domain = self.zone.name.rstrip(".")
         self.log_debug(f"Zone canonical: {zone_canonical}")
         self.log_debug(f"Zone domain: {zone_domain}")
 
         # filter for FQDN names (ip.dns_name, Device, VM, FHRPGroup)
-        query_zone = Q(dns_name__endswith=zone_canonical)|Q(dns_name__endswith=zone_domain)
-        query_zone |= Q(interface__device__name__endswith=zone_canonical)|Q(interface__device__name__endswith=zone_domain)
-        query_zone |= Q(vminterface__virtual_machine__name__endswith=zone_canonical)|Q(vminterface__virtual_machine__name__endswith=zone_domain)
-        query_zone |= Q(fhrpgroup__name__endswith=zone_canonical)|Q(fhrpgroup__name__endswith=zone_domain)
+        query_zone = Q(dns_name__endswith=zone_canonical) | Q(
+            dns_name__endswith=zone_domain
+        )
+        query_zone |= Q(interface__device__name__endswith=zone_canonical) | Q(
+            interface__device__name__endswith=zone_domain
+        )
+        query_zone |= Q(
+            vminterface__virtual_machine__name__endswith=zone_canonical
+        ) | Q(vminterface__virtual_machine__name__endswith=zone_domain)
+        query_zone |= Q(fhrpgroup__name__endswith=zone_canonical) | Q(
+            fhrpgroup__name__endswith=zone_domain
+        )
 
         self.log_debug("Checking if this is a rdns zone")
         parts = zone_domain.split(".")
@@ -310,22 +356,27 @@ class PowerdnsTaskFullSync(PowerdnsTask):
                     network_cidr = None
 
             if network_cidr:
-                self.log_debug(f"Prefix found, going to check for hosts between {network_cidr.network} and {network_cidr.broadcast}")
+                self.log_debug(
+                    f"Prefix found, going to check for hosts between {network_cidr.network} and {network_cidr.broadcast}"
+                )
                 # Query any address within the CIDR range
                 query_zone |= Q(address__net_host_contained=network_cidr)
         else:
             self.log_debug("No rDNS zone found.")
-
 
         # filter for matchers (tags & roles)
         query_zone |= Q(tags__in=self.zone.match_ipaddress_tags.all())
         query_zone |= Q(interface__tags__in=self.zone.match_interface_tags.all())
         query_zone |= Q(vminterface__tags__in=self.zone.match_interface_tags.all())
         query_zone |= Q(interface__device__tags__in=self.zone.match_device_tags.all())
-        query_zone |= Q(vminterface__virtual_machine__tags__in=self.zone.match_device_tags.all())
+        query_zone |= Q(
+            vminterface__virtual_machine__tags__in=self.zone.match_device_tags.all()
+        )
         query_zone |= Q(fhrpgroup__tags__in=self.zone.match_fhrpgroup_tags.all())
         query_zone |= Q(interface__device__role__in=self.zone.match_device_roles.all())
-        query_zone |= Q(vminterface__virtual_machine__role__in=self.zone.match_device_roles.all())
+        query_zone |= Q(
+            vminterface__virtual_machine__role__in=self.zone.match_device_roles.all()
+        )
         results = IPAddress.objects.filter(query_zone)
         if self.zone.match_interface_mgmt_only:
             results = results.filter(interface__mgmt_only=True)
@@ -335,7 +386,7 @@ class PowerdnsTaskFullSync(PowerdnsTask):
         records = set()
         ip: IPAddress
         ip_addresses = self.get_addresses()
-        
+
         self.log_info(f"Found {ip_addresses.count()} matching addresses to check")
         for ip in ip_addresses:
             self.log_debug(f"Checking IP: {ip}")
@@ -344,47 +395,59 @@ class PowerdnsTaskFullSync(PowerdnsTask):
             self.make_fqdn()
             if not self.forward_zone:
                 self.log_info(f"No matching forward zone found for IP:{ip}. Skipping")
-                pass
 
             if not self.fqdn:
-                self.log_info(f"No FQDN could be determined for IP:{ip} (zone:{self.forward_zone}). Skipping")
-                pass
+                self.log_info(
+                    f"No FQDN could be determined for IP:{ip} (zone:{self.forward_zone}). Skipping"
+                )
 
             if self.forward_zone and self.forward_zone == self.zone:
                 name = self.fqdn.replace(self.forward_zone.name, "").rstrip(".")
-                records.add(DnsRecord(
-                    name=name,
-                    data=str(ip.address.ip),
-                    dns_type=FAMILY_TYPES.get(ip.family),
-                    zone_name=self.forward_zone.name,
-                    ttl=get_ip_ttl(ip) or self.forward_zone.default_ttl,
-                ))
+                records.add(
+                    DnsRecord(
+                        name=name,
+                        data=str(ip.address.ip),
+                        dns_type=FAMILY_TYPES.get(ip.family),
+                        zone_name=self.forward_zone.name,
+                        ttl=get_ip_ttl(ip) or self.forward_zone.default_ttl,
+                    )
+                )
 
             if self.zone.is_reverse:
                 reverse_fqdn = self.make_reverse_domain()
                 self.log_debug(f"Reverse FQDN: {reverse_fqdn}")
                 self.reverse_zone = Zone.get_best_zone(reverse_fqdn)
-                self.log_debug(f"Reverse zone found for IP:{ip} (zone:{self.reverse_zone})")
+                self.log_debug(
+                    f"Reverse zone found for IP:{ip} (zone:{self.reverse_zone})"
+                )
 
                 if not self.reverse_zone:
-                    self.log_info(f"No matching reverse zone for {ip} ({self.fqdn}). Skipping")
+                    self.log_info(
+                        f"No matching reverse zone for {ip} ({self.fqdn}). Skipping"
+                    )
                     continue
-                
+
                 if self.reverse_zone == self.zone:
                     name = reverse_fqdn.replace(self.reverse_zone.name, "").rstrip(".")
-                    self.log_debug(f"Reverse name: {name} - {self.fqdn} - {self.reverse_zone.name}")
+                    self.log_debug(
+                        f"Reverse name: {name} - {self.fqdn} - {self.reverse_zone.name}"
+                    )
 
                     # Try to create a name here using the NamingDeviceByInterfacePrimary method
 
-                    name = NamingDeviceByInterfacePrimary(ip, self.reverse_zone).make_name()
+                    name = NamingDeviceByInterfacePrimary(
+                        ip, self.reverse_zone
+                    ).make_name()
                     self.log_debug(f"Generated name: {name}")
-                    records.add(DnsRecord(
-                        name=name,
-                        data=self.fqdn,
-                        dns_type=PTR_TYPE,
-                        zone_name=self.reverse_zone.name,
-                        ttl=get_ip_ttl(ip) or self.reverse_zone.default_ttl,
-                    ))
+                    records.add(
+                        DnsRecord(
+                            name=name,
+                            data=self.fqdn,
+                            dns_type=PTR_TYPE,
+                            zone_name=self.reverse_zone.name,
+                            ttl=get_ip_ttl(ip) or self.reverse_zone.default_ttl,
+                        )
+                    )
         return records
 
     def load_pdns_records(self) -> set[DnsRecord]:
@@ -401,7 +464,9 @@ class PowerdnsTaskFullSync(PowerdnsTask):
                 )
             for record in pdns_zone.records:
                 if record["type"] not in checked_types:
-                    self.log_debug(f"Skipping record {record['name']} because of type {record['type']}")
+                    self.log_debug(
+                        f"Skipping record {record['name']} because of type {record['type']}"
+                    )
                     continue
                 else:
                     self.log_debug(f"Processing record {record['name']}")
