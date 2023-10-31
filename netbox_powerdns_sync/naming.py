@@ -1,6 +1,6 @@
 import importlib
 
-from dcim.models import Interface
+from dcim.models import Interface, Device
 from ipam.models import FHRPGroup, IPAddress
 from virtualization.models import VMInterface
 
@@ -85,6 +85,7 @@ class NamingBase:
         self.zone = zone
         self.interface = None
         self.host = None
+        self.tld = None
 
     def make_fqdn(self) -> str | None:
         fqdn = None
@@ -106,6 +107,11 @@ class NamingBase:
         if isinstance(self.ip.assigned_object, Interface):
             self.interface = self.ip.assigned_object
             self.host = self.ip.assigned_object.device
+            # set self.tld with the custom_field named 'domain' of the device
+            
+
+            
+            self.tld = 
         elif isinstance(self.ip.assigned_object, VMInterface):
             self.interface = self.ip.assigned_object
             self.host = self.ip.assigned_object.virtual_machine

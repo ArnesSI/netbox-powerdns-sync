@@ -428,10 +428,7 @@ class PowerdnsTaskFullSync(PowerdnsTask):
                     continue
 
                 if self.reverse_zone == self.zone:
-                    name = reverse_fqdn.replace(self.reverse_zone.name, "").rstrip(".")
-                    self.log_debug(
-                        f"Reverse name: {name} - {self.fqdn} - {self.reverse_zone.name}"
-                    )
+                    
 
                     # Try to create a name here using the NamingDeviceByInterfacePrimary method
 
