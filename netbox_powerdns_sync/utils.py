@@ -116,3 +116,27 @@ def find_objectchange_ip(ip, request_id):
         changed_object_type=ContentType.objects.get_for_model(ip),
         changed_object_id=ip.pk,
     )
+
+def set_dns_name(ip_address_str: str, dns_name_str: str) -> bool:
+    """
+    Set the DNS name for a given IPAddress in NetBox.
+    
+    Parameters:
+    - ip_address_str (str): The IP address for which the DNS name needs to be set.
+    - dns_name_str (str): The DNS name to set for the given IP address.
+    
+    Returns:
+    - bool: True if the operation succeeded, False otherwise.
+    """
+    
+    try:
+        ip_address = IPAddress.objects.get(address=ip_address_str)
+        ip_address.dns_name = dns_name_str
+        ip_address.save()
+        return True
+    except IPAddress.DoesNotExist:
+        print(f"IP Address {ip_address_str} not found in the database.")
+        return False
+    except Exception as e:
+        print(f"Error setting DNS name: {e}")
+        return False
