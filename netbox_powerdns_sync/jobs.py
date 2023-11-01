@@ -187,9 +187,11 @@ class PowerdnsTaskIP(PowerdnsTask):
         self.make_fqdn()
         
         if not self.forward_zone:
-            raise PowerdnsSyncNoZoneFound(f"No forward zone found for IP:{self.ip}")
+            self.log_error(f"No forward zone found for IP:{self.ip}")
+            pass
         if not self.fqdn:
-            raise PowerdnsSyncNoNameFound(f"No forward name for IP:{self.ip} (zone:{self.forward_zone})")
+            self.log_error(f"No forward name for IP:{self.ip} (zone:{self.forward_zone})")
+            pass
         
         self.log_debug(f"Forward FQDN: {self.fqdn}")
         self.log_debug(f"Forward Zone: {self.forward_zone}")
