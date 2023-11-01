@@ -221,9 +221,9 @@ class PowerdnsTaskIP(PowerdnsTask):
 
         if self.fqdn:
             self.log_debug(f"Forward FQDN: {self.fqdn}")
-            name = self.fqdn.replace(self.forward_zone.name, "").rstrip(".")
+            name = self.fqdn.replace(self.forward_zone, "").rstrip(".")
         else:
-            name = self.forward_zone.name + "."
+            name = self.forward_zone + "."
             self.log_debug(f"Forward Zone: {self.forward_zone}")
 
         
@@ -232,7 +232,7 @@ class PowerdnsTaskIP(PowerdnsTask):
             dns_type=FAMILY_TYPES[self.ip.family],
             data=str(self.ip.address.ip),
             ttl=get_ip_ttl(self.ip) or self.forward_zone.default_ttl,
-            zone_name=self.forward_zone.name,
+            zone_name=self.forward_zone,
         )
         self.log_info(f"Forward record: {dns_record}")
         self.create_record(dns_record)
