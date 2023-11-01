@@ -117,7 +117,7 @@ PLUGINS_CONFIG = {
         # Example settings below, see "Available settings"
         # in README.md for all possible settings
         "ttl_custom_field": "",
-        "custom_domain_field": "domain.tld",
+        "custom_domain_field": "field_name",
         "powerdns_managed_record_comment": None,
 |       "post_save_enabled": False,
     },
