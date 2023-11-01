@@ -231,7 +231,7 @@ class PowerdnsTaskIP(PowerdnsTask):
             name=name,
             dns_type=FAMILY_TYPES[self.ip.family],
             data=str(self.ip.address.ip),
-            ttl=get_ip_ttl(self.ip) or self.forward_zone.default_ttl,
+            ttl=get_ip_ttl(self.ip),
             zone_name=self.forward_zone,
         )
         self.log_info(f"Forward record: {dns_record}")
