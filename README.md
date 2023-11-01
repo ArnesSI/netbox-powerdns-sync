@@ -131,7 +131,7 @@ PLUGINS_CONFIG = {
 | `ttl_custom_field` | `None`| Name of netbox Custom field applied to IP Address objects. See [Custom TTL field](#custom-ttl-field) below. |
 | `powerdns_managed_record_comment` | `"netbox-powerdns-sync"`| Is set, the plugin will only touch records in PowerDNS API that have matching comment and ignore others. Set to `None` to make plugin manage all supported records. |
 | `post_save_enabled` | `False`| When creating or updating an IP Address, Device or FHRP Group, immediately create its DNS records using `post_save` signals. |
-| `custom_domain_field` | `None`| Name of netbox Custom field applied to IP Address objects. |
+| `custom_domain_field` | `None`| Name of netbox Custom field linked to the Device or Virtual Machine |
 
 #### Custom domain field
 
