@@ -146,8 +146,7 @@ class NamingDeviceByInterfacePrimary(NamingBase):
                     make_dns_label(self.interface.name)
                     + "-"
                     + name
-                    + "."
-                    + get_custom_domain(self.ip)
+                    
                 )
             return name
 
