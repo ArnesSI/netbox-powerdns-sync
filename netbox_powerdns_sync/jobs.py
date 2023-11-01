@@ -225,7 +225,7 @@ class PowerdnsTaskIP(PowerdnsTask):
         dns_record = DnsRecord(
             name=name,
             dns_type=PTR_TYPE,
-            data=self.fqdn,
+            data=str(generate_fqdn(ip, self.reverse_zone)),
             ttl=get_ip_ttl(self.ip) or self.reverse_zone.default_ttl,
             zone_name=self.reverse_zone.name,
         )
