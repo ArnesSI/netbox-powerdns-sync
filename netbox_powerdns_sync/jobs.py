@@ -219,10 +219,14 @@ class PowerdnsTaskIP(PowerdnsTask):
         else:
             self.log_info(f"Found matching forward zone to be {self.forward_zone}")
 
-        self.log_debug(f"Forward FQDN: {self.fqdn}")
-        self.log_debug(f"Forward Zone: {self.forward_zone}")
+        if self.fqdn:
+            self.log_debug(f"Forward FQDN: {self.fqdn}")
+            name = self.fqdn.replace(self.forward_zone.name, "").rstrip(".")
+        else:
+            name = self.forward_zone.name + "."
+            self.log_debug(f"Forward Zone: {self.forward_zone}")
 
-        name = self.fqdn.replace(self.forward_zone.name, "").rstrip(".")
+        
         dns_record = DnsRecord(
             name=name,
             dns_type=FAMILY_TYPES[self.ip.family],
