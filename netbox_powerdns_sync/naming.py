@@ -5,7 +5,7 @@ from ipam.models import FHRPGroup, IPAddress
 from virtualization.models import VMInterface
 
 from .models import Zone
-from .utils import make_canonical, make_dns_label
+from .utils import make_canonical, make_dns_label, get_custom_domain
 
 
 def _load_class(path: str) -> object:
@@ -35,21 +35,16 @@ def generate_fqdn(ip: IPAddress, zone: Zone) -> str | None:
     """
 
     fqdn = None
-    if not zone:
-        return None
-    if zone.naming_ip_method:
-        klass = _load_class(zone.naming_ip_method)
-        naming_method = klass(ip, zone)
-        fqdn = naming_method.make_fqdn()
-    if not fqdn and zone.naming_device_method:
-        klass = _load_class(zone.naming_device_method)
-        naming_method = klass(ip, zone)
-        fqdn = naming_method.make_fqdn()
-    if not fqdn and zone.naming_fgrpgroup_method:
-        klass = _load_class(zone.naming_fgrpgroup_method)
-        naming_method = klass(ip, zone)
-        fqdn = naming_method.make_fqdn()
-    return fqdn
+    for method_attr in ['naming_ip_method', 'naming_device_method', 'naming_fgrpgroup_method']:
+        method := getattr(zone, method_attr, None)
+        if method:
+            klass = _load_class(method)
+            naming_method = klass(ip, zone)
+            fqdn := naming_method.make_fqdn()
+            if fqdn:
+                return fqdn
+    return None
+
 
 
 class NamingBase:
@@ -157,7 +152,7 @@ class NamingDeviceByInterfacePrimary(NamingBase):
                     + "."
                     + name
                     + "."
-                    + "productsup.int."
+                    + get_custom_domain(self.ip)
                 )
             return name
 

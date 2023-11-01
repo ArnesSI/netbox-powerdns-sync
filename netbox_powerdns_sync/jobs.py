@@ -207,12 +207,16 @@ class PowerdnsTaskIP(PowerdnsTask):
 
         if not self.fqdn:
             raise PowerdnsSyncNoNameFound(f"No forward name for IP:{self.ip}")
+        else:
+            self.log_debug(f"Forward FQDN: {self.fqdn}")
         
         reverse_fqdn = self.make_reverse_domain()
         self.reverse_zone = Zone.get_best_zone(reverse_fqdn)
+
         if not self.reverse_zone:
             self.log_warning(f"No reverse zone for IP:{self.ip} fqdn:{self.fqdn} Skipping")
             return
+        
         name = reverse_fqdn.replace(self.reverse_zone.name, "").rstrip(".")
         dns_record = DnsRecord(
             name=name,
@@ -374,11 +378,11 @@ class PowerdnsTaskFullSync(PowerdnsTask):
                     name = reverse_fqdn.replace(self.reverse_zone.name, "").rstrip(".")
                     self.log_debug(f"Reverse name: {name} - {self.fqdn} - {self.reverse_zone.name}")
                     
-                    # Use the NamingDeviceByInterfacePrimary function to generate the data field:
+                    data = generate_fqdn(ip, self.reverse_zone)
 
                     records.add(DnsRecord(
                         name=name,
-                        data=str(NamingDeviceByInterfacePrimary(ip, self.reverse_zone).make_name()),
+                        data=str(data),
                         dns_type=PTR_TYPE,
                         zone_name=self.reverse_zone.name,
                         ttl=get_ip_ttl(ip) or self.reverse_zone.default_ttl,
