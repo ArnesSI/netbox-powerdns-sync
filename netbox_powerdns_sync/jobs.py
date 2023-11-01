@@ -353,12 +353,15 @@ class PowerdnsTaskFullSync(PowerdnsTask):
             if not self.forward_zone:
                 self.log_info(f"No matching forward zone found for IP:{ip}. Skipping")
                 pass
+            else:
+                self.log_info(f"Found matching forward zone to be {self.forward_zone}")
 
             if not self.fqdn:
                 self.log_info(f"No FQDN could be determined for IP:{ip} (zone:{self.forward_zone}). Skipping")
                 pass
 
             if self.forward_zone and self.forward_zone == self.zone:
+                self.log_info(f"Forward zone is matching self.zone, creating forward record for {name}")
                 name = self.fqdn.replace(self.forward_zone.name, "").rstrip(".")
                 records.add(DnsRecord(
                     name=name,
