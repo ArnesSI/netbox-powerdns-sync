@@ -209,11 +209,16 @@ class PowerdnsTaskIP(PowerdnsTask):
     def create_reverse(self) -> None:
         self.make_fqdn()
 
-        if not self.fqdn:
-            raise PowerdnsSyncNoNameFound(f"No forward name for IP:{self.ip}")
+        if not self.forward_zone:
+            self.log_info(f"No matching forward zone found for IP:{ip}. Skipping")
+            pass
         else:
-            self.log_debug(f"Forward FQDN: {self.fqdn}")
-        
+            self.log_info(f"Found matching forward zone to be {self.forward_zone}")
+
+        if not self.fqdn:
+            self.log_info(f"No FQDN could be determined for IP:{ip} (zone:{self.forward_zone}). Skipping")
+            pass
+
         reverse_fqdn = self.make_reverse_domain()
         self.reverse_zone = Zone.get_best_zone(reverse_fqdn)
 
