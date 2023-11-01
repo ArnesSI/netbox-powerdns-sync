@@ -13,7 +13,7 @@ from virtualization.models import VirtualMachine, VMInterface
 
 from netbox_powerdns_sync.constants import FAMILY_TYPES, PTR_TYPE
 
-from .exceptions import PowerdnsSyncNoServers, PowerdnsSyncServerZoneMissing, ip
+from .exceptions import PowerdnsSyncNoServers, PowerdnsSyncServerZoneMissing
 from .models import ApiServer, Zone
 from .naming import generate_fqdn
 from .record import DnsRecord
