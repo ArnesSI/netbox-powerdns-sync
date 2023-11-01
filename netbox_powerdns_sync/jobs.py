@@ -213,16 +213,6 @@ class PowerdnsTaskIP(PowerdnsTask):
     def create_forward(self) -> None:
         self.make_fqdn()
 
-        if not self.forward_zone:
-            self.log_error(f"No forward zone found for IP:{self.ip}")
-        if not self.fqdn:
-            self.log_error(
-                f"No forward name for IP:{self.ip} (zone:{self.forward_zone})"
-            )
-
-        self.log_debug(f"Forward FQDN: {self.fqdn}")
-        self.log_debug(f"Forward Zone: {self.forward_zone}")
-
         name = self.fqdn.replace(self.forward_zone.name, "").rstrip(".")
         dns_record = DnsRecord(
             name=name,
