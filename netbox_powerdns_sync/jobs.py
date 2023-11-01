@@ -227,10 +227,12 @@ class PowerdnsTaskIP(PowerdnsTask):
             return
         
         name = reverse_fqdn.replace(self.reverse_zone.name, "").rstrip(".")
+        fqdn = generate_fqdn(self.ip, self.reverse_zone)
+        custom_domain = get_custom_domain(self.ip)
         dns_record = DnsRecord(
             name=name,
             dns_type=PTR_TYPE,
-            data=str(generate_fqdn(ip, self.reverse_zone)),
+            data=f"{fqdn or ''}{custom_domain or ''}",
             ttl=get_ip_ttl(self.ip) or self.reverse_zone.default_ttl,
             zone_name=self.reverse_zone.name,
         )
@@ -390,19 +392,19 @@ class PowerdnsTaskFullSync(PowerdnsTask):
                     continue
                 
                 if self.reverse_zone == self.zone:
+                    
                     name = reverse_fqdn.replace(self.reverse_zone.name, "").rstrip(".")
                     self.log_debug(f"Reverse name: {name} - {self.fqdn} - {self.reverse_zone.name}")
-                    
-                    data = generate_fqdn(ip, self.reverse_zone)
-                    self.log_debug(f"Reverse data: {data}")
-
+                    fqdn = generate_fqdn(self.ip, self.reverse_zone)
+                    custom_domain = get_custom_domain(self.ip)
                     records.add(DnsRecord(
                         name=name,
-                        data=str(data),
                         dns_type=PTR_TYPE,
+                        data=f"{fqdn or ''}{custom_domain or ''}",
+                        ttl=get_ip_ttl(self.ip) or self.reverse_zone.default_ttl,
                         zone_name=self.reverse_zone.name,
-                        ttl=get_ip_ttl(ip) or self.reverse_zone.default_ttl,
                     ))
+                    
         return records
 
     def load_pdns_records(self) -> set[DnsRecord]:
