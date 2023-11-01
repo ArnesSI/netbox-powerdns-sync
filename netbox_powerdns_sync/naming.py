@@ -87,13 +87,8 @@ class NamingBase:
         name = self.make_name()
         if not name:
             return None
-        name = make_canonical(name)
-        # check if name already includes zone name
-        if name.endswith(self.zone.name):
-            fqdn = name
-        else:
-            fqdn = name + self.zone.name
-        return fqdn
+
+        return make_canonical(name)
 
     def make_name(self) -> str | None:
         raise NotImplementedError()

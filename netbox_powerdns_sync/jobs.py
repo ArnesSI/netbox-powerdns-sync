@@ -379,6 +379,7 @@ class PowerdnsTaskFullSync(PowerdnsTask):
                     self.log_debug(f"Reverse name: {name} - {self.fqdn} - {self.reverse_zone.name}")
                     
                     data = generate_fqdn(ip, self.reverse_zone)
+                    self.log_debug(f"Reverse data: {data}")
 
                     records.add(DnsRecord(
                         name=name,
