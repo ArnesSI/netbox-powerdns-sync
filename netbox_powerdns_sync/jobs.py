@@ -17,7 +17,7 @@ from .models import ApiServer, Zone
 from .naming import generate_fqdn
 from .naming import NamingDeviceByInterfacePrimary
 from .record import DnsRecord
-from .utils import get_ip_ttl, make_dns_label, make_canonical
+from .utils import get_ip_ttl, make_dns_label, make_canonical, get_custom_domain
 
 from netaddr import IPNetwork
 
@@ -112,6 +112,10 @@ class PowerdnsTask(JobLoggingMixin):
         # determine zone by matching tags or roles
         if not self.forward_zone:
             self.forward_zone = Zone.match_ip(self.ip).first()
+        
+        if not self.forward_zone:
+            self.forward_zone = get_custom_domain(self.ip)
+
         return self.forward_zone
 
     def make_reverse_domain(self) -> str|None:
