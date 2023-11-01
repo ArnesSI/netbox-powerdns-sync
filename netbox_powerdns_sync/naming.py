@@ -36,11 +36,11 @@ def generate_fqdn(ip: IPAddress, zone: Zone) -> str | None:
 
     fqdn = None
     for method_attr in ['naming_ip_method', 'naming_device_method', 'naming_fgrpgroup_method']:
-        method := getattr(zone, method_attr, None)
+        method = getattr(zone, method_attr, None)
         if method:
             klass = _load_class(method)
             naming_method = klass(ip, zone)
-            fqdn := naming_method.make_fqdn()
+            fqdn = naming_method.make_fqdn()
             if fqdn:
                 return fqdn
     return None
