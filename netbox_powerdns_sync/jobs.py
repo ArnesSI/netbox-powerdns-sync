@@ -216,8 +216,6 @@ class PowerdnsTaskIP(PowerdnsTask):
         if not self.forward_zone:
             self.log_info(f"No matching forward zone found for IP:{ip}. Skipping")
             pass
-        else:
-            
 
         if self.fqdn:
             self.log_debug(f"Forward FQDN: {self.fqdn}")
@@ -229,14 +227,10 @@ class PowerdnsTaskIP(PowerdnsTask):
             else:
                 name = self.fqdn.replace(self.forward_zone.name, "").rstrip(".")
                 self.log_info(f"Found matching forward zone to be {name}")
-            
         else:
             name = (self.forward_zone if type(self.forward_zone) is str else self.forward_zone.name) + "."
             self.log_debug(f"Forward Zone: {name}")
 
-            
-
-        
         dns_record = DnsRecord(
             name=name,
             dns_type=FAMILY_TYPES[self.ip.family],
