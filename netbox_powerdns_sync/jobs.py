@@ -219,16 +219,11 @@ class PowerdnsTaskIP(PowerdnsTask):
 
         if self.fqdn:
             self.log_debug(f"Forward FQDN: {self.fqdn}")
-            name = (self.forward_zone if type(self.forward_zone) is str else self.forward_zone.name) + "."
-            
-            if type(self.forward_zone) is str:
-                name = self.fqdn.replace(self.forward_zone, "").rstrip(".")
-                self.log_info(f"Found matching forward zone to be {name}")
-            else:
-                name = self.fqdn.replace(self.forward_zone.name, "").rstrip(".")
-                self.log_info(f"Found matching forward zone to be {name}")
+            name = (self.forward_zone if type(self.forward_zone) is str else self.forward_zone.name)
+            self.log_info(f"Found matching forward zone to be {name}")
+
         else:
-            name = (self.forward_zone if type(self.forward_zone) is str else self.forward_zone.name) + "."
+            name = (self.forward_zone if type(self.forward_zone) is str else self.forward_zone.name)
             self.log_debug(f"Forward Zone: {name}")
 
         dns_record = DnsRecord(
@@ -236,7 +231,7 @@ class PowerdnsTaskIP(PowerdnsTask):
             dns_type=FAMILY_TYPES[self.ip.family],
             data=str(self.ip.address.ip),
             ttl=get_ip_ttl(self.ip),
-            zone_name=(self.forward_zone if type(self.forward_zone) is str else self.forward_zone.name) + ".",
+            zone_name=(self.forward_zone if type(self.forward_zone) is str else self.forward_zone.name),
         )
         self.log_info(f"Forward record: {dns_record}")
         self.create_record(dns_record)
