@@ -215,6 +215,7 @@ class PowerdnsTaskIP(PowerdnsTask):
 
         if not self.forward_zone:
             self.log_info(f"No matching forward zone found for IP:{self.ip}. Skipping")
+            pass
         else:
             self.log_info(f"Found matching forward zone to be {self.forward_zone}")
 
