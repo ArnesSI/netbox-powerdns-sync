@@ -214,24 +214,34 @@ class PowerdnsTaskIP(PowerdnsTask):
         self.make_fqdn()
 
         if not self.forward_zone:
-            self.log_info(f"No matching forward zone found for IP:{ip}. Skipping")
-            pass
-
-        if self.fqdn:
-            self.log_debug(f"Forward FQDN: {self.fqdn}")
-            name = (self.forward_zone if type(self.forward_zone) is str else self.forward_zone.name)
-            self.log_info(f"Found matching forward zone to be {name}")
-
+            self.log_info(f"No matching forward zone found for IP:{self.ip}. Skipping")
         else:
-            name = (self.forward_zone if type(self.forward_zone) is str else self.forward_zone.name)
-            self.log_debug(f"Forward Zone: {name}")
+            self.log_info(f"Found matching forward zone to be {self.forward_zone}")
+
+        if not self.fqdn:
+            self.log_info(
+                f"No FQDN could be determined for IP:{self.ip} (zone:{self.forward_zone}). Skipping"
+            )
+
+        reverse_fqdn = self.make_reverse_domain()
+        self.log_debug(f"Reverse FQDN: {reverse_fqdn}")
+        self.reverse_zone = Zone.get_best_zone(str(reverse_fqdn))
+        if not self.reverse_zone:
+            self.log_info(f"No matching reverse zone for {ip} ({self.fqdn}). Skipping")
+
+        self.log_debug(
+            f"Reverse zone found for IP:{self.ip} (zone:{self.reverse_zone})"
+        )
+        name = reverse_fqdn.replace(self.reverse_zone.name, "").rstrip(".")
+        fqdn = generate_fqdn(self.ip, self.reverse_zone)
+        custom_domain = get_custom_domain(self.ip)
 
         dns_record = DnsRecord(
             name=name,
             dns_type=FAMILY_TYPES[self.ip.family],
-            data=str(self.ip.address.ip),
+            data=f"{fqdn or ''}{custom_domain or ''}.",
             ttl=get_ip_ttl(self.ip),
-            zone_name=(self.forward_zone if type(self.forward_zone) is str else self.forward_zone.name),
+            zone_name=self.reverse_zone.name,
         )
         self.log_info(f"Forward record: {dns_record}")
         self.create_record(dns_record)
