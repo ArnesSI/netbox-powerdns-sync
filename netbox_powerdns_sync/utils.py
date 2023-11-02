@@ -130,7 +130,8 @@ def set_dns_name(ip_address_str: str, dns_name_str: str) -> bool:
     """
     
     try:
-        ip_address = IPAddress.objects.get(address=ip_address_str)
+        print(f"Setting DNS name {dns_name_str} for IP address {ip_address_str}")
+        ip_address = IPAddress.objects.get(address=str(ip_address_str))
         ip_address.dns_name = dns_name_str
         ip_address.save()
         return True
