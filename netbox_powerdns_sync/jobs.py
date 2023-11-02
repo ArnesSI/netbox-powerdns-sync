@@ -239,9 +239,9 @@ class PowerdnsTaskIP(PowerdnsTask):
         dns_record = DnsRecord(
             name=name,
             dns_type=FAMILY_TYPES[self.ip.family],
-            data=f"{fqdn or ''}{custom_domain or ''}.",
+            data=str(self.ip.address.ip),
             ttl=get_ip_ttl(self.ip) or self.reverse_zone.default_ttl,
-            zone_name=self.reverse_zone.name,
+            zone_name=self.forward_zone.name,
         )
         self.log_info(f"Forward record: {dns_record}")
         self.create_record(dns_record)
