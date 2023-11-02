@@ -232,7 +232,7 @@ class PowerdnsTaskIP(PowerdnsTask):
         self.log_debug(
             f"Reverse zone found for IP:{self.ip} (zone:{self.reverse_zone})"
         )
-        name = reverse_fqdn.replace(self.reverse_zone.name, "").rstrip(".")
+        name = self.fqdn.replace(self.forward_zone.name, "").rstrip(".")
         fqdn = generate_fqdn(self.ip, self.reverse_zone)
         custom_domain = get_custom_domain(self.ip)
 
