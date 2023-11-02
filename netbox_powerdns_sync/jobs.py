@@ -229,6 +229,7 @@ class PowerdnsTaskIP(PowerdnsTask):
         self.reverse_zone = Zone.get_best_zone(str(reverse_fqdn))
         if not self.reverse_zone:
             self.log_info(f"No matching reverse zone for {self.ip} ({self.fqdn}). Skipping")
+            pass
 
         self.log_debug(
             f"Reverse zone found for IP:{self.ip} (zone:{self.reverse_zone})"
