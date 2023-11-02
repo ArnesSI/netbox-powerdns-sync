@@ -240,7 +240,7 @@ class PowerdnsTaskIP(PowerdnsTask):
             name=name,
             dns_type=FAMILY_TYPES[self.ip.family],
             data=f"{fqdn or ''}{custom_domain or ''}.",
-            ttl=get_ip_ttl(self.ip),
+            ttl=get_ip_ttl(self.ip) or self.reverse_zone.default_ttl,
             zone_name=self.reverse_zone.name,
         )
         self.log_info(f"Forward record: {dns_record}")
