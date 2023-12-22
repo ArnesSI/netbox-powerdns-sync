@@ -1,0 +1,65 @@
+name: Run tests under netbox
+on: [push]
+jobs:
+  test-netbox:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        netbox-version: ["v3.6.7"]
+    services:
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: netbox
+          POSTGRES_PASSWORD: netbox
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      pdns:
+        image: powerdns/pdns-auth-master
+        env:
+          PDNS_AUTH_API_KEY: 1234567890a
+        ports:
+          - 8081:8081
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          path: netbox-powerdns-sync
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Checkout netbox ${{ matrix.netbox-version }}
+        uses: actions/checkout@v3
+        with:
+          repository: "netbox-community/netbox"
+          ref: ${{ matrix.netbox-version }}
+          path: netbox
+
+      - name: install netbox_powerdns_sync
+        working-directory: netbox-powerdns-sync
+        run: |
+          pip install .
+      - name: Install dependencies & set up configuration
+        working-directory: netbox
+        run: |
+          ln -s $(pwd)/../netbox-powerdns-sync/testing/configuration.testing.py netbox/netbox/configuration.py
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -U
+      - name: Run tests
+        working-directory: netbox
+        run: |
+          python netbox/manage.py test netbox_powerdns_sync.tests -v 2
