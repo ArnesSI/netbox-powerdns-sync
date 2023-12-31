@@ -15,6 +15,7 @@ class NetBoxPowerdnsSyncConfig(PluginConfig):
         "ttl_custom_field": None,
         "powerdns_managed_record_comment": "netbox-powerdns-sync",
         "post_save_enabled": False,
+        "custom_domain_field": None
     }
 
     def ready(self):

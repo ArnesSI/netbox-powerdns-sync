@@ -11,7 +11,21 @@ __all__ = (
     "ApiServerForm",
     "ZoneForm",
 )
+class ApiServerForm(NetBoxModelForm):
+    """
+    Form for creating or updating an API server.
 
+    Args:
+        self: The instance of the form.
+
+    Attributes:
+        fieldsets (tuple): The fieldsets for the form.
+    
+    Meta:
+        model (ApiServer): The model associated with the form.
+        fields (list): The fields to include in the form.
+
+    """
 
 class ApiServerForm(NetBoxModelForm):
     fieldsets = (
@@ -95,17 +109,11 @@ class ZoneForm(NetBoxModelForm):
     def clean_match_roles(self, data):
         if not is_reverse(data["name"]):
             return
+        
         if data.get("match_device_roles"):
             self.add_error("match_device_roles", "Cannot set match roles for reverse zone")
 
     def clean_naming_methods(self, data):
         if not is_reverse(data["name"]):
             return
-        fields = (
-            "naming_ip_method",
-            "naming_device_method",
-            "naming_fgrpgroup_method",
-        )
-        for f in fields:
-            if data.get(f):
-                self.add_error(f, "Cannot set naming methods for reverse zone")
+        

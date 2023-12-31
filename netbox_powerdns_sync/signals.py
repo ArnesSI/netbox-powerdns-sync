@@ -36,31 +36,31 @@ DEVICE_DNS_FIELDS = (
 )
 
 
-@receiver(post_save, sender=IPAddress)
-def update_ipaddress_dns(instance, **kwargs):
-    if not get_plugin_config(PLUGIN_NAME, "post_save_enabled"):
-        return
-    changed = True
-    if hasattr(instance, "_prechange_snapshot"):
-        prechange_snapshot = instance._prechange_snapshot
-        postchange_snapshot = instance.serialize_object()
-        # determine if important fields changed
-        changed = False
-        for field in IPADDRESS_DNS_FIELDS:
-            if prechange_snapshot.get(field) != postchange_snapshot.get(field):
-                changed = True
-    if not changed:
-        # nothing interesting changed, nothing to do
-        return
-    job_args = dict(
-        func=PowerdnsTaskIP.run_update_ip,
-        instance=instance,
-        name=JOB_NAME_IP,
-    )
-    request = current_request.get()
-    if request:
-        job_args["user"] = request.user
-    transaction.on_commit(lambda: Job.enqueue(**job_args))
+#@receiver(post_save, sender=IPAddress)
+#def update_ipaddress_dns(instance, **kwargs):
+#    if not get_plugin_config(PLUGIN_NAME, "post_save_enabled"):
+#        return
+#    changed = True
+#    if hasattr(instance, "_prechange_snapshot"):
+#        prechange_snapshot = instance._prechange_snapshot
+#        postchange_snapshot = instance.serialize_object()
+#        # determine if important fields changed
+#        changed = False
+#        for field in IPADDRESS_DNS_FIELDS:
+#            if prechange_snapshot.get(field) != postchange_snapshot.get(field):
+#                changed = True
+#    if not changed:
+#        # nothing interesting changed, nothing to do
+#        return
+#    job_args = dict(
+#        func=PowerdnsTaskIP.run_update_ip,
+#        instance=instance,
+#        name=JOB_NAME_IP,
+#    )
+#    request = current_request.get()
+#    if request:
+#        job_args["user"] = request.user
+#    transaction.on_commit(lambda: Job.enqueue(**job_args))
 
 
 @receiver(post_save, sender=Interface)
