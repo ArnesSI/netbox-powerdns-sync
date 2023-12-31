@@ -11,7 +11,7 @@ packages = [{include = "netbox_powerdns_sync"}]
 include = ["netbox_powerdns_sync/templates/*.html"]
 
 [tool.poetry.dependencies]
-python = ">=3.9"
+python = ">=3.10"
 python-powerdns = "^2.1.0"
 
 [tool.poetry.group.dev.dependencies]
